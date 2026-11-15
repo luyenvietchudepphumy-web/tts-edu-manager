@@ -1,17 +1,178 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TTS EDU MANAGER 1.0</title><style>
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TTS EDU MANAGER 1.2</title><style>
 :root{font-family:system-ui,Arial,sans-serif;color:#14283f;background:#f3f6fb}*{box-sizing:border-box}body{margin:0}header{background:#1554a0;color:white;padding:20px 5%}header h1{margin:0;font-size:24px}header p{margin:5px 0 0;font-size:13px}main{max-width:1150px;margin:auto;padding:20px}nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}button,.btn{cursor:pointer;border:0;border-radius:8px;background:#1554a0;color:white;padding:10px 14px;font-size:14px}button.secondary{background:#e3ebf5;color:#173956}button.danger{background:#b42336}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #8bbbf0}.panel,.metric{background:white;border:1px solid #e0e7ef;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px #0a274008}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric small{display:block;color:#66788d}.metric strong{display:block;font-size:23px;margin-top:8px;overflow-wrap:anywhere}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}label{display:block;font-weight:600;font-size:13px;margin:8px 0 4px}input,select{width:100%;padding:11px;border:1px solid #bfcddd;border-radius:8px;font:inherit;background:white}form .actions{margin-top:14px;display:flex;gap:8px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid #e6edf4;padding:10px;text-align:left;vertical-align:middle}th{background:#f6f9fc}.table-wrap{overflow:auto}td button{padding:6px 9px;margin:2px}h2{font-size:20px;margin:0 0 14px}.muted{color:#65768a;font-size:13px}.hidden{display:none}.notice{padding:12px;background:#fff7e6;border:1px solid #f4d49b;border-radius:8px;margin-bottom:16px;font-size:13px}.pill{display:inline-block;border-radius:20px;padding:4px 9px;background:#eaf2ff}.good{color:#14723e}.bad{color:#b42336}footer{text-align:center;color:#718096;font-size:12px;padding:24px}@media(max-width:750px){.metrics{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}main{padding:12px}header{padding:16px}td{min-width:85px}}
-</style></head><body><header><h1>🎓 TTS EDU MANAGER</h1><p>Trung tâm Tri Thức Số · Hình thành tri thức – Dẫn lối thời đại số</p></header><main><div class="notice"><strong>Phiên bản học tập 1.0:</strong> Dữ liệu lưu trên trình duyệt hiện tại, không đồng bộ và có thể bị mất khi xóa dữ liệu trang web. Chỉ nhập dữ liệu giả; chưa dùng cho hồ sơ học viên thật.</div><nav><button data-tab="dashboard">📊 Tổng quan</button><button data-tab="students" class="secondary">👩‍🎓 Học viên</button><button data-tab="classes" class="secondary">📚 Lớp học</button><button data-tab="payments" class="secondary">💳 Học phí</button><button data-tab="backup" class="secondary">💾 Sao lưu</button></nav>
-<section id="dashboard" class="tab"><div class="metrics"><div class="metric"><small>Học viên</small><strong id="countStudents">0</strong></div><div class="metric"><small>Lớp học</small><strong id="countClasses">0</strong></div><div class="metric"><small>Đã thu</small><strong id="totalPaid">0đ</strong></div><div class="metric"><small>Công nợ dự kiến*</small><strong id="totalDue">0đ</strong></div></div><div class="panel"><h2>Thống kê theo cơ sở</h2><div id="branches"></div><p class="muted">* Công nợ dự kiến = tổng học phí tháng được khai báo của học viên trừ các khoản đã thu ghi nhận trong tháng hiện tại, tối thiểu bằng 0 cho mỗi học viên. Đây không phải hệ thống kế toán hoặc công nợ nhiều kỳ.</p></div></section>
+
+fieldset{border:1px solid #d7e3ed;border-radius:10px;margin:14px 0;padding:10px 14px}
+legend{font-weight:700;color:#173956;padding:0 6px}
+.tuition-days,.tuition-actions{display:flex;flex-wrap:wrap;gap:8px 14px;margin:10px 0}
+.tuition-days label{display:flex;align-items:center;gap:5px;padding:5px 0;margin:0}
+.tuition-days input{width:auto}
+dialog{width:min(850px,calc(100% - 24px));max-height:90vh;overflow:auto;border:1px solid #bfcddd;border-radius:12px;padding:20px;color:#14283f}
+dialog::backdrop{background:#14283f88}
+#receiptPaper h2{text-align:center}
+#receiptPaper{overflow-wrap:anywhere}
+#receiptPaper th,#receiptPaper td{font-size:12px;padding:6px;min-width:0}
+@page{margin:14mm}
+@media print{
+  body:has(#receiptDialog[open]){background:white}
+  body:has(#receiptDialog[open]) :is(body>header,main>nav,main>.notice,main>.tab:not(#payments),#payments>.panel,#tuitionDialog,#assignDialog,footer,#receiptDialog>.actions){display:none!important}
+  #receiptDialog[open]{display:block;position:static;overflow:visible;border:0;width:auto;max-width:none;max-height:none;margin:0;padding:0}
+  #receiptDialog::backdrop{display:none}body:has(#receiptDialog[open]) main{padding:0;margin:0;max-width:none}#receiptPaper tr{break-inside:avoid}
+}
+</style></head><body><header><h1>🎓 TTS EDU MANAGER</h1><p>Trung tâm Tri Thức Số · Hình thành tri thức – Dẫn lối thời đại số</p></header><main><div class="notice"><strong>Phiên bản học tập 1.2:</strong> Dữ liệu lưu trên trình duyệt hiện tại, không đồng bộ và có thể bị mất khi xóa dữ liệu trang web. Chỉ nhập dữ liệu giả; chưa dùng cho hồ sơ học viên thật.</div><nav><button data-tab="dashboard">📊 Tổng quan</button><button data-tab="students" class="secondary">👩‍🎓 Học viên</button><button data-tab="classes" class="secondary">📚 Lớp học</button><button data-tab="payments" class="secondary">💳 Học phí</button><button data-tab="backup" class="secondary">💾 Sao lưu</button></nav>
+<section id="dashboard" class="tab"><div class="metrics"><div class="metric"><small>Học viên</small><strong id="countStudents">0</strong></div><div class="metric"><small>Lớp học</small><strong id="countClasses">0</strong></div><div class="metric"><small>Đã thu</small><strong id="totalPaid">0đ</strong></div><div class="metric"><small>Công nợ dự kiến*</small><strong id="totalDue">0đ</strong></div></div><div class="panel"><h2>Thống kê theo cơ sở</h2><div id="branches"></div><p class="muted">* Công nợ tháng hiện tại dùng số phải thu và khoản thu đã gắn vào kỳ. Học viên đang học chưa tạo kỳ vẫn dùng học phí khai báo và khoản thu ngoài kỳ ghi nhận trong tháng. Xem các tháng khác ở mục Học phí.</p></div></section>
 <section id="students" class="tab hidden"><div class="panel"><h2>Thêm / sửa học viên</h2><form id="studentForm"><input type="hidden" id="studentId"><div class="grid"><div><label for="studentName">Họ tên (dữ liệu giả)</label><input id="studentName" required maxlength="100" placeholder="Ví dụ: Học viên mẫu 01"></div><div><label for="studentCode">Mã học viên</label><input id="studentCode" required maxlength="30" placeholder="HV001"></div><div><label for="studentBranch">Cơ sở</label><select id="studentBranch"><option>Phú Mỹ</option><option>Phú Lợi</option><option>Hiệp An</option><option>Tân Phước Khánh</option><option>Cơ sở 5</option><option>Cơ sở 6</option></select></div><div><label for="studentClass">Lớp học</label><select id="studentClass"><option value="">Chưa phân lớp</option></select></div><div><label for="studentFee">Học phí dự kiến mỗi tháng (VNĐ)</label><input id="studentFee" type="number" min="0" step="1" inputmode="numeric" value="560000" required><small class="muted">Tự làm tròn đến 1.000đ gần nhất khi rời ô.</small></div><div><label for="studentStatus">Trạng thái</label><select id="studentStatus"><option>Đang học</option><option>Tạm nghỉ</option><option>Đã nghỉ</option></select></div></div><div class="actions"><button type="submit">Lưu học viên</button><button type="button" id="resetStudent" class="secondary">Nhập mới</button></div></form></div><div class="panel"><h2>Danh sách học viên</h2><label for="studentSearch">Tìm theo tên hoặc mã</label><input id="studentSearch" placeholder="Nhập từ khóa"><div class="table-wrap"><table><thead><tr><th>Mã</th><th>Họ tên</th><th>Cơ sở</th><th>Lớp</th><th>Học phí/tháng</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="studentRows"></tbody></table></div></div></section>
-<section id="classes" class="tab hidden"><div class="panel"><h2>Thêm / sửa lớp học</h2><form id="classForm"><input type="hidden" id="classId"><div class="grid"><div><label for="className">Tên lớp</label><input id="className" required maxlength="100" placeholder="Toán lớp 6"></div><div><label for="classBranch">Cơ sở</label><select id="classBranch"><option>Phú Mỹ</option><option>Phú Lợi</option><option>Hiệp An</option><option>Tân Phước Khánh</option><option>Cơ sở 5</option><option>Cơ sở 6</option></select></div><div><label for="classSchedule">Lịch học</label><input id="classSchedule" maxlength="100" placeholder="Thứ 3, 5 - 18:00"></div><div><label for="classTeacher">Giáo viên (tên giả)</label><input id="classTeacher" maxlength="100" placeholder="Giáo viên mẫu"></div></div><div class="actions"><button type="submit">Lưu lớp học</button><button type="button" id="resetClass" class="secondary">Nhập mới</button></div></form></div><div class="panel"><h2>Danh sách lớp học</h2><div class="table-wrap"><table><thead><tr><th>Tên lớp</th><th>Cơ sở</th><th>Lịch học</th><th>Giáo viên</th><th>Sĩ số</th><th>Thao tác</th></tr></thead><tbody id="classRows"></tbody></table></div></div></section>
-<section id="payments" class="tab hidden"><div class="panel"><h2>Ghi nhận học phí đã thu</h2><form id="paymentForm"><div class="grid"><div><label for="paymentStudent">Học viên</label><select id="paymentStudent" required></select></div><div><label for="paymentAmount">Số tiền đã thu (VNĐ)</label><input id="paymentAmount" type="number" min="1" step="1" inputmode="numeric" required placeholder="560000"><small class="muted">Tự làm tròn đến 1.000đ gần nhất khi rời ô (ví dụ: 560001 → 560000).</small></div><div><label for="paymentDate">Ngày thu</label><input id="paymentDate" type="date" required></div><div><label for="paymentNote">Ghi chú</label><input id="paymentNote" maxlength="200" placeholder="Ví dụ: Học phí tháng 11"></div></div><div class="actions"><button type="submit">Ghi nhận thu tiền</button></div></form></div><div class="panel"><h2>Lịch sử thu học phí</h2><p class="muted">Chỉ ghi nhận tiền đã thu; chưa xử lý hoàn tiền, ưu đãi, học phí nhiều kỳ hay phiếu thu pháp lý.</p><div class="table-wrap"><table><thead><tr><th>Ngày</th><th>Học viên</th><th>Số tiền</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody id="paymentRows"></tbody></table></div></div></section>
+<section id="classes" class="tab hidden"><div class="panel"><h2>Thêm / sửa lớp học</h2><form id="classForm"><input type="hidden" id="classId"><div class="grid"><div><label for="className">Tên lớp</label><input id="className" required maxlength="100" placeholder="Toán lớp 6"></div><div><label for="classBranch">Cơ sở</label><select id="classBranch"><option>Phú Mỹ</option><option>Phú Lợi</option><option>Hiệp An</option><option>Tân Phước Khánh</option><option>Cơ sở 5</option><option>Cơ sở 6</option></select></div><div><label for="classSchedule">Lịch học</label><input id="classSchedule" maxlength="100" placeholder="Thứ 3, 5 - 18:00"></div><div><label for="classTeacher">Giáo viên (tên giả)</label><input id="classTeacher" maxlength="100" placeholder="Giáo viên mẫu"></div></div><div id="classWeekdays"><p class="muted">Ngày học dùng để đếm số buổi</p></div><div class="actions"><button type="submit">Lưu lớp học</button><button type="button" id="resetClass" class="secondary">Nhập mới</button></div></form></div><div class="panel"><h2>Danh sách lớp học</h2><div class="table-wrap"><table><thead><tr><th>Tên lớp</th><th>Cơ sở</th><th>Lịch học</th><th>Giáo viên</th><th>Sĩ số</th><th>Thao tác</th></tr></thead><tbody id="classRows"></tbody></table></div></div></section>
+<section id="payments" class="tab hidden">
+<div class="panel">
+  <h2>Đăng ký và tính học phí</h2>
+  <form id="tuitionForm">
+    <div class="grid">
+      <div><label for="tuitionStudent">Học viên</label><select id="tuitionStudent" required></select></div>
+      <div><label for="tuitionGrade">Khối của học viên</label><select id="tuitionGrade" required></select></div>
+      <div><label for="tuitionStart">Ngày bắt đầu kỳ học</label><input id="tuitionStart" type="date" required></div>
+      <div><label for="tuitionPackage">Gói học phí</label><select id="tuitionPackage"><option value="1">Theo tháng</option><option value="3">3 tháng · giảm 6%</option><option value="6">6 tháng · giảm 10%</option><option value="12">12 tháng · giảm 12%</option></select></div>
+    </div>
+    <div id="tuitionCourses"></div>
+    <button type="button" class="secondary" id="addCourse">Thêm lớp / môn</button>
+    <p class="muted">Lớp 1–5 · 70.000đ/buổi. Lớp 6–8 · 80.000đ/buổi. Lớp 9–12 · 90.000đ/buổi. Mỗi thứ đã chọn tính một buổi. Tháng đầu đếm từ ngày bắt đầu.</p>
+    <div class="actions"><button>Tạo kỳ học phí</button></div>
+    <p id="tuitionMessage" role="status" class="muted"></p>
+  </form>
+</div>
+<div class="panel">
+  <h2>Kỳ học phí đã đăng ký</h2>
+  <div class="grid">
+    <div><label for="tuitionFilterMonth">Lọc theo tháng</label><input id="tuitionFilterMonth" type="month"></div>
+    <div><label for="tuitionFilterStudent">Lọc theo học viên</label><select id="tuitionFilterStudent"></select></div>
+  </div>
+  <p id="tuitionTotals" class="muted"></p>
+  <div class="table-wrap"><table><thead><tr><th>Tháng</th><th>Học viên</th><th>Trạng thái</th><th>Phải thu</th><th>Đã thu</th><th>Còn thu / dư</th><th>Thao tác</th></tr></thead><tbody id="tuitionRows"></tbody></table></div>
+</div>
+<dialog id="tuitionDialog">
+  <form id="tuitionMonthForm">
+    <h2 id="tuitionMonthTitle"></h2>
+    <div id="tuitionMonthCourses"></div>
+    <label for="referralDate">Ngày xác nhận giới thiệu thành công</label>
+    <input id="referralDate" type="date" aria-describedby="referralHint">
+    <small class="muted" id="referralHint">Chỉ ghi cho học viên giới thiệu. Giảm 10% vào tháng kế tiếp, áp dụng mức giảm cao hơn nếu có gói.</small>
+    <div class="actions tuition-actions">
+      <button type="submit" value="draft" formnovalidate>Lưu tạm tính</button>
+      <button type="submit" value="settled">Chốt theo buổi thực tế</button>
+      <button type="button" id="closeTuition" class="secondary">Đóng</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="assignDialog">
+  <form id="assignForm">
+    <h2>Gắn khoản đã thu vào kỳ</h2>
+    <p id="assignDetail"></p>
+    <label for="assignPeriod">Kỳ học phí</label>
+    <select id="assignPeriod" required></select>
+    <div class="actions tuition-actions"><button>Gắn vào kỳ</button><button type="button" class="secondary" id="closeAssignment">Đóng</button></div>
+  </form>
+</dialog>
+<dialog id="receiptDialog">
+  <article id="receiptPaper"></article>
+  <div class="actions tuition-actions"><button type="button" id="printReceipt">In / lưu PDF</button><button type="button" class="secondary" id="closeReceipt">Đóng</button></div>
+</dialog><div class="panel"><h2>Ghi nhận học phí đã thu</h2><form id="paymentForm"><div class="grid"><div><label for="paymentStudent">Học viên</label><select id="paymentStudent" required></select></div><div><label for="paymentPeriod">Kỳ học phí</label><select id="paymentPeriod"></select><small id="paymentBalance" class="muted"></small></div><div><label for="paymentAmount">Số tiền đã thu (VNĐ)</label><input id="paymentAmount" type="number" min="1" step="1" inputmode="numeric" required placeholder="560000"><small class="muted">Tự làm tròn đến 1.000đ gần nhất khi rời ô (ví dụ: 560001 → 560000).</small></div><div><label for="paymentDate">Ngày thu</label><input id="paymentDate" type="date" required></div><div><label for="paymentNote">Ghi chú</label><input id="paymentNote" maxlength="200" placeholder="Ví dụ: Học phí tháng 11"></div></div><div class="actions"><button type="submit">Ghi nhận thu tiền</button></div><p id="paymentMessage" role="status" class="muted"></p></form></div><div class="panel"><h2>Lịch sử thu học phí</h2><p class="muted">Các khoản gắn với kỳ học phí có thể in phiếu thu nội bộ. Khoản thu ngoài kỳ vẫn hiển thị trong lịch sử.</p><div class="table-wrap"><table><thead><tr><th>Ngày</th><th>Học viên</th><th>Kỳ</th><th>Số tiền</th><th>Ghi chú</th><th>Thao tác</th></tr></thead><tbody id="paymentRows"></tbody></table></div></div></section>
 <section id="backup" class="tab hidden"><div class="panel"><h2>Sao lưu dữ liệu</h2><p>Xuất một bản sao JSON ra máy tính. Bản sao có thể chứa thông tin đã nhập; hãy bảo quản cẩn thận.</p><button id="exportBtn">⬇️ Tải bản sao JSON</button></div><div class="panel"><h2>Khôi phục dữ liệu</h2><p class="bad">Cảnh báo: nhập bản sao sẽ thay thế toàn bộ dữ liệu hiện có trên trình duyệt này.</p><label for="importFile">Chọn tệp JSON đã sao lưu</label><input type="file" id="importFile" accept=".json,application/json"><button id="importBtn" style="margin-top:12px">Khôi phục từ tệp</button></div><div class="panel"><h2>Xóa dữ liệu thử nghiệm</h2><button id="clearBtn" class="danger">Xóa toàn bộ dữ liệu trên trình duyệt</button></div></section>
-</main><footer>TTS EDU MANAGER · Bản thử nghiệm nội bộ 1.0 · Không nhập dữ liệu cá nhân thật</footer><script>
+</main><footer>TTS EDU MANAGER · Bản thử nghiệm nội bộ 1.2 · Không nhập dữ liệu cá nhân thật</footer><script>
 'use strict';
+const PACKAGE_DISCOUNTS = {1: 0, 3: 6, 6: 10, 12: 12};
+const SCHOOL_DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const GIFT_THRESHOLD = 699000;
+
+function tuitionDate(value) {
+  if (!/^20\d{2}-\d{2}-\d{2}$/.test(value)) throw Error('Chọn ngày hợp lệ trong giai đoạn 2000–2099.');
+  const date = new Date(value + 'T00:00:00Z');
+  if (isNaN(date) || date.toISOString().slice(0, 10) !== value) throw Error('Ngày không hợp lệ.');
+  return date;
+}
+
+function nextMonth(month, offset = 1) {
+  const date = tuitionDate(month + '-01');
+  date.setUTCMonth(date.getUTCMonth() + offset);
+  return date.toISOString().slice(0, 7);
+}
+
+function vietnamToday() {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts();
+  const get = type => parts.find(part => part.type === type).value;
+  return [get('year'), get('month'), get('day')].join('-');
+}
+
+function sessionCount(value) {
+  if (value === '' || value == null) throw Error('Nhập số buổi cho từng lớp. Nhập 0 nếu không có buổi.');
+  const count = Number(value);
+  if (!Number.isInteger(count) || count < 0 || count > 999) throw Error('Số buổi phải là số nguyên từ 0 đến 999.');
+  return count;
+}
+
+function tuitionRate(grade) {
+  if (!Number.isInteger(grade) || grade < 1 || grade > 12) throw Error('Chọn khối từ lớp 1 đến lớp 12.');
+  return grade <= 5 ? 70000 : grade <= 8 ? 80000 : 90000;
+}
+
+function scheduledDates(start, month, weekdays) {
+  const first = month + '-01';
+  const dates = [];
+  const day = tuitionDate(start > first ? start : first);
+  while (day.toISOString().slice(0, 7) === month) {
+    if (weekdays.includes(day.getUTCDay())) dates.push(day.toISOString().slice(0, 10));
+    day.setUTCDate(day.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+function makeTuitionMonths({studentId, grade, start, months, courses}) {
+  tuitionDate(start);
+  const rate = tuitionRate(grade);
+  if (!Object.hasOwn(PACKAGE_DISCOUNTS, months)) throw Error('Chọn gói hợp lệ.');
+  if (!courses.length || new Set(courses.map(course => course.classId)).size !== courses.length)
+    throw Error('Chọn ít nhất một lớp và mỗi lớp chỉ chọn một lần.');
+  if (courses.some(course => !course.weekdays.length ||
+      course.weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6)))
+    throw Error('Chọn thứ học cho từng lớp.');
+
+  return Array.from({length: months}, (_, index) => {
+    const month = nextMonth(start.slice(0, 7), index);
+    tuitionDate(month + '-01');
+    const lines = courses.map(course => {
+      const dates = scheduledDates(start, month, course.weekdays);
+      return {...course, rate, dates, registered: dates.length, actual: null};
+    });
+    return {studentId, grade, start, month, months, lines, referralDate: '', settled: false};
+  });
+}
+
+function tuitionBill(period) {
+  const lines = period.lines.map(line => {
+    const billed = period.settled ? Math.min(line.actual, line.registered) : line.registered;
+    return {...line, billed, extra: line.actual == null ? null : Math.max(0, line.actual - line.registered),
+      subtotal: billed * line.rate};
+  });
+  const gross = lines.reduce((sum, line) => sum + line.subtotal, 0);
+  const packageRate = PACKAGE_DISCOUNTS[period.months];
+  const referral = Boolean(period.referralDate);
+  const discountRate = Math.max(packageRate, referral ? 10 : 0);
+  const due = Math.round(gross * (100 - discountRate) / 100000) * 1000;
+  const discount = gross * discountRate / 100;
+  return {lines, gross, packageRate, referral, discountRate, discount, due,
+    rounding: due - (gross - discount), gift: gross >= GIFT_THRESHOLD ? 2 : 0};
+}
+
+function validateReferral(date, month, today) {
+  if (!date) return;
+  tuitionDate(date);
+  if (date > today) throw Error('Ngày xác nhận giới thiệu phải là ngày đã qua hoặc hôm nay.');
+  if (nextMonth(date.slice(0, 7)) !== month) throw Error('Ưu đãi giới thiệu chỉ áp dụng vào tháng ngay sau tháng xác nhận.');
+}
 const KEY='tts-edu-manager-v1';
-const empty=()=>({students:[],classes:[],payments:[]});
+const empty=()=>({students:[],classes:[],payments:[],tuition:[]});
 let db=empty();
-try{const raw=JSON.parse(localStorage.getItem(KEY));if(raw&&Array.isArray(raw.students)&&Array.isArray(raw.classes)&&Array.isArray(raw.payments))db=raw;}catch(e){console.warn('Không đọc được dữ liệu cũ',e)}
+try{const raw=JSON.parse(localStorage.getItem(KEY));if(raw&&Array.isArray(raw.students)&&Array.isArray(raw.classes)&&Array.isArray(raw.payments))db={...raw,tuition:Array.isArray(raw.tuition)?raw.tuition:[]};}catch(e){console.warn('Không đọc được dữ liệu cũ',e)}
 const $=id=>document.getElementById(id);
 // Quy tắc chung: mọi khoản học phí và khoản thu được làm tròn đến 1.000đ gần nhất.
 // 560499 => 560000; 560500 => 561000.
@@ -49,29 +210,416 @@ function options(select,items,placeholder){const previous=select.value;select.re
 function render(){
   $('countStudents').textContent=db.students.length;$('countClasses').textContent=db.classes.length;
   $('totalPaid').textContent=money(db.payments.reduce((a,p)=>a+p.amount,0));
-  const month=new Date().toISOString().slice(0,7);
-  const currentPaid=new Map();db.payments.filter(p=>p.date.slice(0,7)===month).forEach(p=>currentPaid.set(p.studentId,(currentPaid.get(p.studentId)||0)+p.amount));
-  const due=db.students.filter(s=>s.status==='Đang học').reduce((a,s)=>a+Math.max(0,s.fee-(currentPaid.get(s.id)||0)),0);
+  const month=vietnamToday().slice(0,7);
+  const currentPaid=new Map();db.payments.filter(p=>!p.periodId&&p.date.slice(0,7)===month).forEach(p=>currentPaid.set(p.studentId,(currentPaid.get(p.studentId)||0)+p.amount));
+
+  const currentPeriods = db.tuition.filter(period => period.month === month);
+  const tuitionDue = currentPeriods.reduce((sum, period) =>
+    sum + Math.max(0, tuitionBill(period).due - periodPaid(period.id)), 0);
+  const legacyDue = db.students.filter(student => student.status === 'Đang học' &&
+    !currentPeriods.some(period => period.studentId === student.id)).reduce((sum, student) =>
+    sum + Math.max(0, student.fee - (currentPaid.get(student.id) || 0)), 0);
+  const due = tuitionDue + legacyDue;
   $('totalDue').textContent=money(due);
   const counts={};db.students.forEach(s=>counts[s.branch]=(counts[s.branch]||0)+1);$('branches').replaceChildren();Object.entries(counts).sort().forEach(([branch,count])=>{const p=document.createElement('p');p.textContent=branch+': '+count+' học viên';$('branches').appendChild(p)});if(!db.students.length)$('branches').textContent='Chưa có học viên mẫu.';
   options($('studentClass'),db.classes.filter(c=>c.branch===$('studentBranch').value).map(c=>({label:c.name,value:c.id})),'Chưa phân lớp');
   options($('paymentStudent'),db.students.map(s=>({label:s.code+' – '+s.name,value:s.id})),'Chọn học viên');
   const search=$('studentSearch').value.trim().toLocaleLowerCase('vi');$('studentRows').replaceChildren();
-  db.students.filter(s=>(s.name+' '+s.code).toLocaleLowerCase('vi').includes(search)).forEach(s=>{const r=document.createElement('tr');td(r,s.code);td(r,s.name);td(r,s.branch);td(r,db.classes.find(c=>c.id===s.classId)?.name||'Chưa phân lớp');td(r,money(s.fee));td(r,s.status);const cell=td(r,'');action(cell,'Sửa',()=>editStudent(s));action(cell,'Xóa',()=>{if(confirm('Xóa học viên và các khoản thu liên quan?')){db.students=db.students.filter(x=>x.id!==s.id);db.payments=db.payments.filter(p=>p.studentId!==s.id);save();render();}} ,'danger');$('studentRows').appendChild(r)});
+  db.students.filter(s=>(s.name+' '+s.code).toLocaleLowerCase('vi').includes(search)).forEach(s=>{const r=document.createElement('tr');td(r,s.code);td(r,s.name);td(r,s.branch);td(r,db.classes.find(c=>c.id===s.classId)?.name||'Chưa phân lớp');td(r,money(s.fee));td(r,s.status);const cell=td(r,'');action(cell,'Sửa',()=>editStudent(s));action(cell,'Xóa',()=>{if(confirm('Xóa học viên, các kỳ học phí và các khoản thu liên quan?') && commitTuition({...db,students:db.students.filter(x=>x.id!==s.id),payments:db.payments.filter(p=>p.studentId!==s.id),tuition:db.tuition.filter(p=>p.studentId!==s.id)}))render();} ,'danger');$('studentRows').appendChild(r)});
   $('classRows').replaceChildren();db.classes.forEach(c=>{const r=document.createElement('tr');td(r,c.name);td(r,c.branch);td(r,c.schedule);td(r,c.teacher);td(r,db.students.filter(s=>s.classId===c.id).length);const cell=td(r,'');action(cell,'Sửa',()=>editClass(c));action(cell,'Xóa',()=>{if(db.students.some(s=>s.classId===c.id)){alert('Hãy chuyển học viên sang lớp khác trước khi xóa.');return;}if(confirm('Xóa lớp này?')){db.classes=db.classes.filter(x=>x.id!==c.id);save();render();}},'danger');$('classRows').appendChild(r)});
-  $('paymentRows').replaceChildren();[...db.payments].sort((a,b)=>b.date.localeCompare(a.date)).forEach(p=>{const r=document.createElement('tr');td(r,p.date);td(r,db.students.find(s=>s.id===p.studentId)?.name||'Không rõ');td(r,money(p.amount));td(r,p.note);const cell=td(r,'');action(cell,'Xóa',()=>{if(confirm('Xóa khoản thu này?')){db.payments=db.payments.filter(x=>x.id!==p.id);save();render();}},'danger');$('paymentRows').appendChild(r)});
+  $('paymentRows').replaceChildren();[...db.payments].sort((a,b)=>b.date.localeCompare(a.date)).forEach(p=>{const r=document.createElement('tr');td(r,p.date);td(r,db.students.find(s=>s.id===p.studentId)?.name||'Không rõ');td(r,p.receipt?.period.month||'—');td(r,money(p.amount));td(r,p.note);const cell=td(r,'');if(p.receipt)action(cell,'Phiếu thu',()=>printPaymentReceipt(p));else if(db.tuition.some(period=>period.studentId===p.studentId))action(cell,'Gắn kỳ',()=>openPaymentAssignment(p));action(cell,'Xóa',()=>{if(confirm('Xóa khoản thu này?')&&commitTuition({...db,payments:db.payments.filter(x=>x.id!==p.id)}))render();},'danger');$('paymentRows').appendChild(r)});
+  renderTuition();
 }
 function resetStudent(){$('studentForm').reset();$('studentId').value='';$('studentFee').value='560000';render();}
 function editStudent(s){showTab('students');$('studentId').value=s.id;$('studentName').value=s.name;$('studentCode').value=s.code;$('studentBranch').value=s.branch;render();$('studentClass').value=s.classId;$('studentFee').value=s.fee;$('studentStatus').value=s.status;window.scrollTo(0,0);}
 $('studentBranch').addEventListener('change',()=>options($('studentClass'),db.classes.filter(c=>c.branch===$('studentBranch').value).map(c=>({label:c.name,value:c.id})),'Chưa phân lớp'));
 $('studentForm').addEventListener('submit',e=>{e.preventDefault();const sid=$('studentId').value;const code=$('studentCode').value.trim();const name=$('studentName').value.trim();const rawFee=Number($('studentFee').value);const fee=roundVND(rawFee);if(!code||!name||!validAmount(rawFee)||!validAmount(fee)){alert('Kiểm tra tên, mã và học phí.');return;}if(db.students.some(s=>s.code.toLowerCase()===code.toLowerCase()&&s.id!==sid)){alert('Mã học viên đã tồn tại.');return;}const student={id:sid||id(),code,name,branch:$('studentBranch').value,classId:$('studentClass').value,fee,status:$('studentStatus').value};if(sid)db.students=db.students.map(s=>s.id===sid?student:s);else db.students.push(student);save();resetStudent();render();});$('resetStudent').addEventListener('click',resetStudent);$('studentSearch').addEventListener('input',render);
 function resetClass(){$('classForm').reset();$('classId').value='';}
-function editClass(c){showTab('classes');$('classId').value=c.id;$('className').value=c.name;$('classBranch').value=c.branch;$('classSchedule').value=c.schedule;$('classTeacher').value=c.teacher;window.scrollTo(0,0);}
-$('classForm').addEventListener('submit',e=>{e.preventDefault();const cid=$('classId').value;const c={id:cid||id(),name:$('className').value.trim(),branch:$('classBranch').value,schedule:$('classSchedule').value.trim(),teacher:$('classTeacher').value.trim()};if(!c.name){alert('Nhập tên lớp.');return;}if(cid&&db.students.some(s=>s.classId===cid&&s.branch!==c.branch)){alert('Không thể đổi cơ sở của lớp đang có học viên thuộc cơ sở khác.');return;}if(cid)db.classes=db.classes.map(x=>x.id===cid?c:x);else db.classes.push(c);save();resetClass();render();});$('resetClass').addEventListener('click',resetClass);
-$('paymentDate').value=new Date().toLocaleDateString('en-CA');
-$('paymentForm').addEventListener('submit',e=>{e.preventDefault();const rawAmount=Number($('paymentAmount').value);const amount=roundVND(rawAmount);const studentId=$('paymentStudent').value;const date=$('paymentDate').value;if(!studentId||!db.students.some(s=>s.id===studentId)||!validAmount(rawAmount)||!validAmount(amount)||amount===0||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)){alert('Kiểm tra học viên, ngày và số tiền.');return;}db.payments.push({id:id(),studentId,amount,date,note:$('paymentNote').value.trim()});save();$('paymentForm').reset();$('paymentDate').value=new Date().toLocaleDateString('en-CA');render();});
-$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),...db},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='tts-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
-$('importBtn').addEventListener('click',async()=>{const file=$('importFile').files[0];if(!file){alert('Hãy chọn tệp JSON.');return;}if(file.size>5*1024*1024){alert('Tệp quá lớn cho bản thử nghiệm.');return;}try{const data=JSON.parse(await file.text());if(!data||!Array.isArray(data.students)||!Array.isArray(data.classes)||!Array.isArray(data.payments))throw Error('Sai cấu trúc');if(!confirm('Thay thế TOÀN BỘ dữ liệu hiện tại bằng tệp đã chọn?'))return;const candidate=normalizeAmounts({students:data.students,classes:data.classes,payments:data.payments});const old=db;db=candidate;try{save();}catch(e){db=old;return;}render();alert('Khôi phục xong. Chỉ nhập tệp do chính bạn đã xuất.');}catch(e){alert('Không đọc được tệp sao lưu hợp lệ.');}});
+function editClass(c){showTab('classes');$('classId').value=c.id;$('className').value=c.name;$('classBranch').value=c.branch;$('classSchedule').value=c.schedule;$('classTeacher').value=c.teacher;for(const input of $('classWeekdays').querySelectorAll('input'))input.checked=Boolean(c.weekdays?.includes(Number(input.value)));window.scrollTo(0,0);}
+$('classForm').addEventListener('submit',e=>{e.preventDefault();const cid=$('classId').value;const c={id:cid||id(),name:$('className').value.trim(),branch:$('classBranch').value,schedule:$('classSchedule').value.trim(),teacher:$('classTeacher').value.trim(),weekdays:[...$('classWeekdays').querySelectorAll('input:checked')].map(input=>Number(input.value))};if(!c.name){alert('Nhập tên lớp.');return;}if(cid&&db.students.some(s=>s.classId===cid&&s.branch!==c.branch)){alert('Không thể đổi cơ sở của lớp đang có học viên thuộc cơ sở khác.');return;}if(cid)db.classes=db.classes.map(x=>x.id===cid?c:x);else db.classes.push(c);save();resetClass();render();});$('resetClass').addEventListener('click',resetClass);
+$('paymentDate').value=vietnamToday();
+
+$('paymentForm').addEventListener('submit', event => {
+  event.preventDefault();
+  const rawAmount = Number($('paymentAmount').value);
+  const amount = roundVND(rawAmount);
+  const student = db.students.find(item => item.id === $('paymentStudent').value);
+  const date = $('paymentDate').value;
+  const periodId = $('paymentPeriod').value;
+  const period = db.tuition.find(item => item.id === periodId && item.studentId === student?.id);
+  try {
+    tuitionDate(date);
+    if (!student || !validAmount(rawAmount) || !validAmount(amount) || !amount) throw Error('Kiểm tra học viên và số tiền.');
+    if (periodId && !period) throw Error('Kỳ học phí không còn tồn tại.');
+    if (!period && db.tuition.some(item => item.studentId === student.id) &&
+        !confirm('Ghi khoản thu ngoài kỳ? Khoản này sẽ chưa được trừ vào kỳ học phí.')) return;
+    const payment = {id: id(), studentId: student.id, amount, date, note: $('paymentNote').value.trim()};
+    const next = period ? attachPayment(payment, period, student) : payment;
+    if (!commitTuition({...db, payments: [...db.payments, next]})) return;
+    $('paymentAmount').value = '';
+    $('paymentNote').value = '';
+    $('paymentMessage').textContent = 'Đã ghi thu ' + money(amount) + (period ? ' cho kỳ ' + period.month + '.' : '.');
+    render();
+    if (next.receipt) printPaymentReceipt(next);
+  } catch (error) {
+    alert(error.message);
+  }
+});
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),...db},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='tts-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+$('importBtn').addEventListener('click',async()=>{const file=$('importFile').files[0];if(!file){alert('Hãy chọn tệp JSON.');return;}if(file.size>5*1024*1024){alert('Tệp quá lớn cho bản thử nghiệm.');return;}try{const data=JSON.parse(await file.text());if(!data||!Array.isArray(data.students)||!Array.isArray(data.classes)||!Array.isArray(data.payments))throw Error('Sai cấu trúc');if(!confirm('Thay thế TOÀN BỘ dữ liệu hiện tại bằng tệp đã chọn?'))return;const candidate=normalizeAmounts({students:data.students,classes:data.classes,payments:data.payments,tuition:validTuitionBackup(data)});const old=db;db=candidate;try{save();}catch(e){db=old;return;}render();alert('Khôi phục xong. Chỉ nhập tệp do chính bạn đã xuất.');}catch(e){alert('Không đọc được tệp sao lưu hợp lệ.');}});
 $('clearBtn').addEventListener('click',()=>{if(confirm('XÓA toàn bộ dữ liệu thử nghiệm trên trình duyệt này? Không thể hoàn tác nếu chưa sao lưu.')){db=empty();save();resetStudent();resetClass();render();}});
+function commitTuition(next) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(next));
+    db = next;
+    return true;
+  } catch {
+    alert('Không lưu được dữ liệu. Vui lòng kiểm tra dung lượng trình duyệt.');
+    return false;
+  }
+}
+
+function tuitionField(parent, caption, input) {
+  const box = document.createElement('div');
+  const label = document.createElement('label');
+  label.append(caption, input);
+  box.append(label);
+  parent.append(box);
+  return input;
+}
+
+function weekdayInputs() {
+  const days = document.createElement('div');
+  days.className = 'tuition-days';
+  days.setAttribute('role', 'group');
+  days.setAttribute('aria-label', 'Thứ học trong tuần');
+  for (const day of [1, 2, 3, 4, 5, 6, 0]) {
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.value = day;
+    const label = document.createElement('label');
+    label.append(check, ' ' + SCHOOL_DAYS[day]);
+    days.append(label);
+  }
+  return days;
+}
+
+function addTuitionCourse() {
+  const fieldset = document.createElement('fieldset');
+  const legend = document.createElement('legend');
+  legend.textContent = 'Lớp / môn học';
+  const select = document.createElement('select');
+  select.required = true;
+  fieldset.append(legend);
+  tuitionField(fieldset, 'Lớp học tại cơ sở', select);
+  const days = weekdayInputs();
+  fieldset.append(days);
+  select.addEventListener('change', () => {
+    const course = db.classes.find(item => item.id === select.value);
+    for (const check of days.querySelectorAll('input')) check.checked = Boolean(course?.weekdays?.includes(Number(check.value)));
+  });
+  action(fieldset, 'Bỏ dòng này', () => {
+    if ($('tuitionCourses').children.length === 1) return;
+    fieldset.remove();
+  });
+  $('tuitionCourses').append(fieldset);
+  updateTuitionCourses();
+}
+
+function updateTuitionCourses() {
+  const student = db.students.find(item => item.id === $('tuitionStudent').value);
+  const classes = db.classes.filter(item => item.branch === student?.branch);
+  for (const select of $('tuitionCourses').querySelectorAll('select')) {
+    const previous = select.value;
+    options(select, classes.map(item => ({value: item.id, label: item.name})), 'Chọn lớp');
+    if (!previous && $('tuitionCourses').children.length === 1 &&
+        classes.some(item => item.id === student.classId)) select.value = student.classId;
+    if (select.value !== previous) select.dispatchEvent(new Event('change'));
+  }
+}
+
+function createTuition(event) {
+  event.preventDefault();
+  const message = $('tuitionMessage');
+  const studentId = $('tuitionStudent').value;
+  const student = db.students.find(item => item.id === studentId);
+  try {
+    if (!student) throw Error('Chọn học viên.');
+    const courses = [...$('tuitionCourses').children].map(fieldset => {
+      const item = db.classes.find(course => course.id === fieldset.querySelector('select').value);
+      if (!item || item.branch !== student.branch) throw Error('Chọn lớp ở cùng cơ sở với học viên.');
+      const weekdays = [...fieldset.querySelectorAll('input:checked')].map(input => Number(input.value));
+      return {classId: item.id, name: item.name, teacher: item.teacher, schedule: item.schedule, weekdays};
+    });
+    const periods = makeTuitionMonths({studentId, grade: Number($('tuitionGrade').value),
+      start: $('tuitionStart').value, months: Number($('tuitionPackage').value), courses});
+    const duplicate = periods.find(period => db.tuition.some(saved => saved.studentId === studentId && saved.month === period.month));
+    if (duplicate) throw Error('Học viên đã có kỳ học phí tháng ' + duplicate.month + '. Mở kỳ đã lưu để cập nhật.');
+    const tuition = [...db.tuition, ...periods.map(period => ({...period, id: id(), branch: student.branch}))];
+    if (!commitTuition({...db, tuition})) return;
+    $('tuitionFilterMonth').value = '';
+    $('tuitionFilterStudent').value = studentId;
+    render();
+    message.textContent = 'Đã tạo ' + periods.length + ' kỳ. Tạm tính cả gói ' +
+      money(periods.reduce((total, period) => total + tuitionBill(period).due, 0)) + '.';
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+function periodPaid(periodId) {
+  return db.payments.reduce((total, payment) => total + (payment.periodId === periodId ? payment.amount : 0), 0);
+}
+
+function balanceText(due, paid) {
+  return paid > due ? 'Dư ' + money(paid - due) : 'Còn ' + money(due - paid);
+}
+
+function updatePaymentPeriods() {
+  const studentId = $('paymentStudent').value;
+  const periods = db.tuition.filter(period => period.studentId === studentId).sort((a, b) => a.month.localeCompare(b.month));
+  options($('paymentPeriod'), periods.map(period => ({value: period.id, label: period.month +
+    (period.settled ? ' · Đã chốt' : ' · Tạm tính')})), 'Thu ngoài kỳ / ghi nhận thủ công');
+  const period = periods.find(item => item.id === $('paymentPeriod').value);
+  $('paymentBalance').textContent = period
+    ? balanceText(tuitionBill(period).due, periodPaid(period.id)) + (period.settled ? '' : ' (tạm tính)')
+    : (periods.length ? 'Chọn kỳ để khoản thu được trừ vào công nợ của kỳ.' : '');
+}
+
+function renderTuition() {
+  const students = db.students.map(student => ({label: student.code + ' – ' + student.name, value: student.id}));
+  options($('tuitionStudent'), students, 'Chọn học viên');
+  options($('tuitionFilterStudent'), students, 'Tất cả học viên');
+  updateTuitionCourses();
+  updatePaymentPeriods();
+  const rows = $('tuitionRows');
+  rows.replaceChildren();
+  const month = $('tuitionFilterMonth').value;
+  const studentId = $('tuitionFilterStudent').value;
+  const periods = db.tuition.filter(period => (!month || period.month === month) && (!studentId || period.studentId === studentId))
+    .sort((a, b) => a.month.localeCompare(b.month));
+  let totalDue = 0;
+  let totalPaid = 0;
+  for (const period of periods) {
+    const student = db.students.find(item => item.id === period.studentId);
+    const bill = tuitionBill(period);
+    const paid = periodPaid(period.id);
+    totalDue += bill.due;
+    totalPaid += paid;
+    const row = rows.insertRow();
+    td(row, period.month);
+    td(row, student?.name);
+    td(row, (period.settled ? 'Đã chốt' : 'Tạm tính') + (period.months > 1 ? ' · Gói ' + period.months + ' tháng' : '') +
+      (bill.gift ? ' · 2 buổi Tin học' : ''));
+    td(row, money(bill.due));
+    td(row, money(paid));
+    td(row, balanceText(bill.due, paid));
+    const buttons = td(row, '');
+    action(buttons, 'Chi tiết', () => openTuitionMonth(period));
+    action(buttons, 'Ghi thu', () => {
+      $('paymentStudent').value = period.studentId;
+      updatePaymentPeriods();
+      $('paymentPeriod').value = period.id;
+      updatePaymentPeriods();
+      $('paymentAmount').value = Math.max(0, bill.due - paid) || '';
+      $('paymentForm').scrollIntoView({block: 'center'});
+      $('paymentAmount').focus({preventScroll: true});
+    });
+    const group = db.tuition.filter(item => item.studentId === period.studentId && item.start === period.start);
+    if (group.every(item => !item.settled && !periodPaid(item.id))) {
+      const label = period.months > 1 ? 'Bỏ cả gói' : 'Bỏ kỳ';
+      action(buttons, label, () => {
+        if (confirm(label + ' bắt đầu ngày ' + period.start + '?') &&
+            commitTuition({...db, tuition: db.tuition.filter(item => !group.includes(item))})) render();
+      }, 'danger');
+    }
+  }
+  $('tuitionTotals').textContent = periods.length
+    ? 'Tổng theo bộ lọc · Phải thu ' + money(totalDue) + ' · Đã thu ' + money(totalPaid) + '.'
+    : 'Chưa có kỳ học phí theo bộ lọc.';
+}
+
+function openTuitionMonth(period) {
+  const dialog = $('tuitionDialog');
+  const student = db.students.find(item => item.id === period.studentId);
+  const courses = $('tuitionMonthCourses');
+  const bill = tuitionBill(period);
+  const paid = periodPaid(period.id);
+  $('tuitionMonthTitle').textContent = (student?.name || 'Học viên') + ' · ' + period.month;
+  courses.replaceChildren();
+  for (const line of bill.lines) {
+    const fieldset = document.createElement('fieldset');
+    const legend = document.createElement('legend');
+    legend.textContent = line.name + ' · ' + money(line.rate) + '/buổi';
+    const dates = document.createElement('p');
+    dates.className = 'muted';
+    dates.textContent = line.dates.length ? 'Ngày theo lịch · ' + line.dates.map(date => date.slice(8)).join(', ') : 'Tháng này chưa có ngày theo lịch.';
+    fieldset.append(legend, dates);
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    for (const [name, caption] of [['registered', 'Số buổi đăng ký'], ['actual', 'Số buổi thực tế']]) {
+      const input = document.createElement('input');
+      Object.assign(input, {type: 'number', name, min: 0, max: 999, step: 1, required: true, value: line[name] ?? ''});
+      tuitionField(grid, caption, input);
+    }
+    fieldset.append(grid);
+    courses.append(fieldset);
+  }
+  const summary = document.createElement('p');
+  summary.className = 'muted';
+  summary.textContent = (period.settled ? 'Đã chốt' : 'Tạm tính') + ' · Học phí gốc ' + money(bill.gross) +
+    ' · Giảm ' + bill.discountRate + '% · Phải thu ' + money(bill.due) + ' · Đã thu ' + money(paid) +
+    ' · ' + balanceText(bill.due, paid) + (bill.gift ? ' · Tặng 2 buổi Tin học' : '') + '.';
+  courses.append(summary);
+  $('referralDate').value = period.referralDate;
+  $('tuitionMonthForm').dataset.periodId = period.id;
+  dialog.showModal();
+}
+
+function saveTuitionMonth(event) {
+  event.preventDefault();
+  const period = db.tuition.find(item => item.id === event.currentTarget.dataset.periodId);
+  if (!period) return;
+  const settled = event.submitter?.value === 'settled';
+  try {
+    const referralDate = $('referralDate').value;
+    validateReferral(referralDate, period.month, vietnamToday());
+    const fields = [...$('tuitionMonthCourses').querySelectorAll('fieldset')];
+    const lines = period.lines.map((line, index) => {
+      const registered = sessionCount(fields[index].querySelector('[name=registered]').value);
+      const actual = fields[index].querySelector('[name=actual]').value;
+      return {...line, registered, actual: settled || actual !== '' ? sessionCount(actual) : null};
+    });
+    const updated = {...period, referralDate, settled, lines};
+    if (commitTuition({...db, tuition: db.tuition.map(item => item.id === period.id ? updated : item)})) {
+      $('tuitionDialog').close();
+      render();
+    }
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function addReceiptText(parent, tag, value) {
+  const element = document.createElement(tag);
+  element.textContent = value;
+  parent.append(element);
+}
+
+function attachPayment(payment, period, student) {
+  return {...payment, periodId: period.id, receipt: {
+    period, student: {name: student.name, code: student.code},
+    paid: periodPaid(period.id) + payment.amount
+  }};
+}
+
+function openPaymentAssignment(payment) {
+  const student = db.students.find(item => item.id === payment.studentId);
+  const periods = db.tuition.filter(item => item.studentId === student?.id)
+    .sort((a, b) => a.month.localeCompare(b.month));
+  if (!periods.length) return;
+  options($('assignPeriod'), periods.map(item => ({label: item.month, value: item.id})), 'Chọn kỳ');
+  $('assignPeriod').value = '';
+  $('assignDetail').textContent = student.name + ' · ' + payment.date + ' · ' + money(payment.amount);
+  $('assignForm').dataset.paymentId = payment.id;
+  $('assignDialog').showModal();
+}
+
+function assignPayment(event) {
+  event.preventDefault();
+  const payment = db.payments.find(item => item.id === event.currentTarget.dataset.paymentId && !item.periodId);
+  const student = db.students.find(item => item.id === payment?.studentId);
+  const period = db.tuition.find(item => item.id === $('assignPeriod').value && item.studentId === student?.id);
+  if (!payment || !student || !period) return;
+  const updated = attachPayment(payment, period, student);
+  if (commitTuition({...db, payments: db.payments.map(item => item.id === payment.id ? updated : item)})) {
+    $('assignDialog').close();
+    render();
+    printPaymentReceipt(updated);
+  }
+}
+
+function validTuitionBackup(data) {
+  const periods = data.tuition === undefined ? [] : data.tuition;
+  const validPeriod = period => period && Object.hasOwn(PACKAGE_DISCOUNTS, period.months) &&
+    typeof period.month === 'string' && typeof period.start === 'string' &&
+    typeof period.settled === 'boolean' && Array.isArray(period.lines) && period.lines.length &&
+    period.lines.every(line => line && Array.isArray(line.weekdays) && Array.isArray(line.dates) &&
+      tuitionRate(period.grade) === line.rate && sessionCount(line.registered) === line.registered &&
+      (line.actual === null && !period.settled || sessionCount(line.actual) === line.actual));
+  if (!Array.isArray(periods) || !periods.every(period => validPeriod(period) &&
+      data.students.some(student => student.id === period.studentId)) ||
+      new Set(periods.map(period => period.id)).size !== periods.length ||
+      new Set(periods.map(period => period.studentId + '/' + period.month)).size !== periods.length ||
+      !data.payments.every(payment => !payment.periodId ||
+        periods.some(period => period.id === payment.periodId && period.studentId === payment.studentId) &&
+        validPeriod(payment.receipt?.period) && payment.receipt?.student && validAmount(payment.receipt.paid)))
+    throw Error('Dữ liệu kỳ học phí hoặc phiếu thu không hợp lệ.');
+  return periods;
+}
+
+function printPaymentReceipt(payment) {
+  const {period, student, paid} = payment.receipt;
+  const bill = tuitionBill(period);
+  const paper = $('receiptPaper');
+  paper.replaceChildren();
+  addReceiptText(paper, 'p', 'TRUNG TÂM TRI THỨC SỐ · ' + period.branch);
+  addReceiptText(paper, 'h2', 'PHIẾU THU HỌC PHÍ');
+  addReceiptText(paper, 'p', 'Mã phiếu ' + payment.id + ' · Ngày thu ' + payment.date);
+  addReceiptText(paper, 'p', student.name + ' (' + student.code + ') · Khối ' + period.grade +
+    ' · Kỳ ' + period.month + ' · Bắt đầu ' + period.start);
+  addReceiptText(paper, 'p', period.settled ? 'Học phí đã chốt theo thực tế' : 'Thu trước theo học phí tạm tính');
+  const table = document.createElement('table');
+  const header = table.createTHead().insertRow();
+  for (const title of ['Môn / lịch', 'Đăng ký', 'Thực tế', 'Tính phí', 'Vượt', 'Đơn giá', 'Thành tiền']) addReceiptText(header, 'th', title);
+  const body = table.createTBody();
+  for (const line of bill.lines) {
+    const row = body.insertRow();
+    td(row, [line.name, line.weekdays.map(day => SCHOOL_DAYS[day]).join(', '), line.schedule, line.teacher].filter(Boolean).join(' · '));
+    td(row, line.registered);
+    td(row, line.actual ?? '—');
+    td(row, line.billed);
+    td(row, line.extra ?? '—');
+    td(row, money(line.rate));
+    td(row, money(line.subtotal));
+  }
+  paper.append(table);
+  const offers = [];
+  if (bill.packageRate) offers.push('Gói ' + period.months + ' tháng ' + bill.packageRate + '%');
+  if (bill.referral) offers.push('Giới thiệu 10%');
+  addReceiptText(paper, 'p', 'Học phí gốc ' + money(bill.gross));
+  if (offers.length) addReceiptText(paper, 'p', offers.join(' · ') + ' · Áp dụng ' + bill.discountRate + '% (' + money(bill.discount) + ')');
+  if (bill.rounding) addReceiptText(paper, 'p', 'Điều chỉnh làm tròn ' + (bill.rounding > 0 ? '+' : '−') + money(Math.abs(bill.rounding)));
+  if (bill.gift) addReceiptText(paper, 'p', (period.settled ? 'Ưu đãi tháng' : 'Ưu đãi tháng dự kiến') + ' · Tặng 2 buổi Tin học');
+  addReceiptText(paper, 'p', 'Phải thu ' + money(bill.due));
+  addReceiptText(paper, 'h3', 'Đã thu lần này ' + money(payment.amount));
+  addReceiptText(paper, 'p', 'Lũy kế đã thu lúc lập phiếu ' + money(paid) + ' · ' + balanceText(bill.due, paid));
+  if (payment.note) addReceiptText(paper, 'p', payment.note);
+  addReceiptText(paper, 'p', 'Người nộp tiền __________________     Người thu tiền __________________');
+  $('receiptDialog').showModal();
+}
+
+function initTuition() {
+  const grades = Array.from({length: 12}, (_, index) => ({value: String(index + 1), label: 'Lớp ' + (index + 1)}));
+  options($('tuitionGrade'), grades, 'Chọn khối');
+  $('tuitionStart').value = vietnamToday();
+  $('classWeekdays').append(weekdayInputs());
+  addTuitionCourse();
+  $('addCourse').addEventListener('click', addTuitionCourse);
+  $('tuitionStudent').addEventListener('change', () => {
+    $('tuitionCourses').replaceChildren();
+    addTuitionCourse();
+  });
+  $('tuitionForm').addEventListener('submit', createTuition);
+  $('tuitionMonthForm').addEventListener('submit', saveTuitionMonth);
+  for (const field of ['tuitionFilterStudent', 'tuitionFilterMonth']) $(field).addEventListener('change', renderTuition);
+  for (const field of ['paymentStudent', 'paymentPeriod']) $(field).addEventListener('change', updatePaymentPeriods);
+  $('closeTuition').addEventListener('click', () => $('tuitionDialog').close());
+  $('assignForm').addEventListener('submit', assignPayment);
+  $('closeAssignment').addEventListener('click', () => $('assignDialog').close());
+  $('closeReceipt').addEventListener('click', () => $('receiptDialog').close());
+  $('printReceipt').addEventListener('click', () => window.print());
+}
+initTuition();
 render();
 </script></body></html>
